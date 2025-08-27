@@ -1,0 +1,27 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:15
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: yogesh28600
+      POSTGRES_PASSWORD: nyk2829
+      POSTGRES_DB: hasura_db
+  hasura:
+    image: hasura/graphql-engine:v2.36.0
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      HASURA_GRAPHQL_DATABASE_URL: postgres://yogesh28600:nyk2829@postgres:5432/hasura_db
+      HASURA_GRAPHQL_ENABLE_CONSOLE: "true"
+      HASURA_GRAPHQL_ADMIN_SECRET: ecom
+      HASURA_GRAPHQL_DEV_MODE: "true"
+    depends_on:
+      - postgres
+    volumes:
+      - ./hasura-config/migrations:/hasura-migrations
+      - ./hasura-config/metadata:/hasura-metadata
