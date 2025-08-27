@@ -1,0 +1,41 @@
+-- Could not auto-generate a down migration.
+-- Please write an appropriate down migration for the SQL below:
+-- CREATE Table cart (
+--   id uuid,
+--   user_id uuid,
+--   quantity varchar,
+--   product_id uuid
+-- );
+--
+-- CREATE TABLE users (
+--   id uuid,
+--   name text,
+--   email text,
+--   phone text,
+--   role text
+-- );
+--
+-- CREATE TABLE address (
+--   id uuid,
+--   user_id uuid,
+--   street text,
+--   city text,
+--   district text,
+--   state text,
+--   pincode text
+-- );
+--
+-- CREATE TABLE image (
+--   id uuid,
+--   url text,
+--   product_id uuid
+-- );
+--
+-- CREATE TABLE orders (
+--   id uuid,
+--   product_id uuid,
+--   user_id uuid,
+--   address_id uuid,
+--   price decimal,
+--   status text
+-- );

@@ -1,0 +1,45 @@
+table:
+  name: orders
+  schema: public
+insert_permissions:
+  - role: user
+    permission:
+      check: {}
+      columns:
+        - price
+        - status
+        - address_id
+        - id
+        - product_id
+        - user_id
+    comment: ""
+select_permissions:
+  - role: user
+    permission:
+      columns:
+        - price
+        - status
+        - address_id
+        - id
+        - product_id
+        - user_id
+      filter: {}
+    comment: ""
+update_permissions:
+  - role: user
+    permission:
+      columns:
+        - price
+        - status
+        - address_id
+        - id
+        - product_id
+        - user_id
+      filter: {}
+      check: null
+    comment: ""
+delete_permissions:
+  - role: user
+    permission:
+      filter: {}
+    comment: ""

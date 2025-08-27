@@ -1,1 +1,6 @@
+- "!include public_address.yaml"
+- "!include public_cart.yaml"
+- "!include public_image.yaml"
+- "!include public_orders.yaml"
 - "!include public_product.yaml"
+- "!include public_users.yaml"

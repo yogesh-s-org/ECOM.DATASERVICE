@@ -1,0 +1,48 @@
+table:
+  name: address
+  schema: public
+insert_permissions:
+  - role: user
+    permission:
+      check: {}
+      columns:
+        - city
+        - district
+        - pincode
+        - state
+        - street
+        - id
+        - user_id
+    comment: ""
+select_permissions:
+  - role: user
+    permission:
+      columns:
+        - city
+        - district
+        - pincode
+        - state
+        - street
+        - id
+        - user_id
+      filter: {}
+    comment: ""
+update_permissions:
+  - role: user
+    permission:
+      columns:
+        - city
+        - district
+        - pincode
+        - state
+        - street
+        - id
+        - user_id
+      filter: {}
+      check: {}
+    comment: ""
+delete_permissions:
+  - role: user
+    permission:
+      filter: {}
+    comment: ""
