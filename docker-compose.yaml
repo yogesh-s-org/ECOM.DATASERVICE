@@ -7,16 +7,16 @@ services:
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_USER: yogesh28600
-      POSTGRES_PASSWORD: nyk2829
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ecom
       POSTGRES_DB: hasura_db
   hasura:
-    image: hasura/graphql-engine:v2.36.0
+    image: hasura/graphql-engine:v2.36.0.cli-migrations-v3
     restart: always
     ports:
       - "8080:8080"
     environment:
-      HASURA_GRAPHQL_DATABASE_URL: postgres://yogesh28600:nyk2829@postgres:5432/hasura_db
+      HASURA_GRAPHQL_DATABASE_URL: postgres://postgres:ecom@postgres:5432/hasura_db
       HASURA_GRAPHQL_ENABLE_CONSOLE: "true"
       HASURA_GRAPHQL_ADMIN_SECRET: ecom
       HASURA_GRAPHQL_DEV_MODE: "true"
