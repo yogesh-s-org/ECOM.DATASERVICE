@@ -10,75 +10,37 @@ def get_products(request):
     """
     Retrieve a list of all products.
     """
-    products = Product.objects.all()
-    serializer = ProductSerializer(products, many=True)
-    return Response(serializer.data, status=status.HTTP_200_OK)
+    try:
+        products = Product.objects.all().select_related('stock').prefetch_related('images')
+        serializer = ProductSerializer(products, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    except Exception as e:
+        print(f"Error fetching products: {e}")
+        return Response( 
+            {'error': 'An error occurred while fetching products'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
 
-@api_view(['POST'])
-def create_product(request):
+@api_view(['GET'])   
+def get_product_detail(request, product_id):
     """
-    Create a new product with stock and images.
-    Expected request format:
-    {
-        "product": {
-            "name": "Product Name",
-            "description": "Description",
-            "sellingPrice": "100.00",
-            "maxRetailPrice": "120.00",
-            "category": "category_id"
-        },
-        "stock": {
-            "quantity": 10,
-            "unit": "pieces"
-        },
-        "images": [
-            {"url": "image_url1"},
-            {"url": "image_url2"}
-        ]
-    }
+    Retrieve detailed information about a specific product, including stock and images.
     """
     try:
-        with transaction.atomic():
-            # Create product
-            product_serializer = ProductSerializer(data=request.data.get('product'))
-            if not product_serializer.is_valid():
-                return Response(product_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-            product = product_serializer.save()
-
-            # Create stock
-            stock_data = request.data.get('stock')
-            if stock_data:
-                stock_data['product'] = product.id
-                stock_serializer = StockSerializer(data=stock_data)
-                if not stock_serializer.is_valid():
-                    raise ValueError(stock_serializer.errors)
-                stock_serializer.save()
-
-            # Create images
-            images_data = request.data.get('images', [])
-            for image_data in images_data:
-                image_data['product'] = product.id
-                image_serializer = ImageSerializer(data=image_data)
-                if not image_serializer.is_valid():
-                    raise ValueError(image_serializer.errors)
-                image_serializer.save()
-
-            # Return the created product with all related data
-            return Response(
-                ProductSerializer(product).data,
-                status=status.HTTP_201_CREATED
-            )
-
-    except ValueError as e:
+        product = Product.objects.get(id=product_id)
+    except Product.DoesNotExist:
         return Response(
-            {'error': str(e)},
-            status=status.HTTP_400_BAD_REQUEST
+            {'error': 'Product not found'},
+            status=status.HTTP_404_NOT_FOUND
         )
     except Exception as e:
         return Response(
-            {'error': 'An error occurred while creating the product'},
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            {'error': 'An error occurred while fetching the product'},
+            status=status.HTTP_400_BAD_REQUEST
         )
+
+    serializer = ProductSerializer(product)
+    return Response(serializer.data, status=status.HTTP_200_OK)
 
 @api_view(['GET'])
 def get_categories(request):
@@ -88,22 +50,3 @@ def get_categories(request):
     categories = Category.objects.all()
     serializer = CategorySerializer(categories, many=True)
     return Response(serializer.data, status=status.HTTP_200_OK)
-
-@api_view(['POST'])
-def create_category(request):
-    """
-    Create a new category.
-    Expected request format:
-    {
-        "name": "Category Name",
-        "description": "Description"
-    }
-    """
-    serializer = CategorySerializer(data=request.data)
-    if serializer.is_valid():
-        category = serializer.save()
-        return Response(
-            CategorySerializer(category).data,
-            status=status.HTTP_201_CREATED
-        )
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

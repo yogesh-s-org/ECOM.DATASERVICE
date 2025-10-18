@@ -9,12 +9,12 @@ class AddressSerializer(serializers.ModelSerializer):
 class StockSerializer(serializers.ModelSerializer):
     class Meta:
         model = Stock
-        fields = ['id', 'quantity', 'unit']
+        fields = ['quantity', 'unit']
 
 class ImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = Image
-        fields = ['id', 'url', 'product']
+        fields = [ 'url']
 
 class ProductSerializer(serializers.ModelSerializer):
     images = ImageSerializer(many=True, read_only=True)
@@ -22,9 +22,8 @@ class ProductSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Product
-        fields = ['id', 'name', 'description', 'sellingPrice', 'maxRetailPrice', 
-                 'category', 'avgRating', 'totalRatings', 'is_available', 
-                 'stock', 'images']
+        fields = ['id', 'name', 'description', 'selling_price', 'max_retail_price', 
+                 'category', 'stock', 'images']
 
 class CartSerializer(serializers.ModelSerializer):
     product = ProductSerializer(read_only=True)
