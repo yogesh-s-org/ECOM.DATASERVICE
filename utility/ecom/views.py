@@ -11,7 +11,10 @@ def get_products(request):
     Retrieve a list of all products.
     """
     try:
-        products = Product.objects.all().select_related('stock').prefetch_related('images')
+        limit = int(request.GET.get('limit'))
+        requestedPage = int(request.GET.get('page'))
+        offset = (limit * (requestedPage - 1))
+        products = Product.objects.all().select_related('stock').prefetch_related('images')[offset : offset + limit]
         serializer = ProductSerializer(products, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
     except Exception as e:
