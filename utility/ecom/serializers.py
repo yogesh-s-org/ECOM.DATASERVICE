@@ -1,6 +1,25 @@
 from rest_framework import serializers
 from .models import User, Address, Product, Stock, Image, Cart, Wishlist, Orders, Category
 
+class RegisterSerializer(serializers.ModelSerializer):
+    password2 = serializers.CharField(write_only=True)
+    class Meta:
+        model = User
+        fields = ['username', 'email', 'password', 'password2']
+        extra_kwargs = {'password': {'write_only': True}}
+    def validate(self, data):
+        if data['password'] != data['password2']:
+            raise serializers.ValidationError("Passwords do not match.")
+        return data
+    def create(self, validated_data):
+        user = User(
+            email=validated_data['email'],
+            username=validated_data['username']
+        )
+        user.set_password(validated_data['password'])
+        user.save()
+        return user
+
 class AddressSerializer(serializers.ModelSerializer):
     class Meta:
         model = Address

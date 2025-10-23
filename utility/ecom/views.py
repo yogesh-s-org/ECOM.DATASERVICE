@@ -2,8 +2,9 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 from .models import Product, Category
-from .serializers import ProductSerializer, StockSerializer, ImageSerializer, CategorySerializer
-from django.db import transaction
+from .serializers import ProductSerializer, CategorySerializer, RegisterSerializer
+from rest_framework_simplejwt.tokens import RefreshToken
+from django.contrib.auth.models import User
 
 @api_view(['GET'])
 def get_products(request):
@@ -11,6 +12,11 @@ def get_products(request):
     Retrieve a list of all products.
     """
     try:
+        if not request.user.has_perm('ecom.view_product'):
+            return Response(
+                {'error': 'You do not have permission to view products'},
+                status=status.HTTP_403_FORBIDDEN
+            )
         limit = int(request.GET.get('limit'))
         requestedPage = int(request.GET.get('page'))
         offset = (limit * (requestedPage - 1))
@@ -30,6 +36,11 @@ def get_product_detail(request, product_id):
     Retrieve detailed information about a specific product, including stock and images.
     """
     try:
+        if not request.user.has_perm('ecom.view_product'):
+            return Response(
+                {'error': 'You do not have permission to view products'},
+                status=status.HTTP_403_FORBIDDEN
+            )       
         product = Product.objects.get(id=product_id)
     except Product.DoesNotExist:
         return Response(
@@ -50,6 +61,64 @@ def get_categories(request):
     """
     Retrieve a list of all categories.
     """
-    categories = Category.objects.all()
-    serializer = CategorySerializer(categories, many=True)
-    return Response(serializer.data, status=status.HTTP_200_OK)
+    try:
+        if not request.user.has_perm('ecom.view_category'):
+            return Response(
+                {'error': 'You do not have permission to view categories'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        categories = Category.objects.all()
+        serializer = CategorySerializer(categories, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    except Exception as e:
+        print(f"Error fetching categories: {e}")
+        return Response(
+            {'error': 'An error occurred while fetching categories'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+@api_view(['POST'])
+def register(request):
+    """
+    Register a new user.
+    """
+    try:
+        serializer = RegisterSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        print(f"Error during registration: {e}")
+        return Response(
+            {'error': 'An error occurred during registration'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+@api_view(['POST'])
+def login(request):
+    """
+    Authenticate a user and provide a JWT token.
+    """
+    try:
+        data = request.data
+        username = data["username"]
+        password = data["password"]
+        user = User.objects.get(username=username)
+        if user and user.check_password(password):
+            refresh = RefreshToken.for_user(user)
+            return Response({
+                'refresh': str(refresh),
+                'access': str(refresh.access_token),
+            }, status=status.HTTP_200_OK)
+        else:
+            return Response(
+                {'error': 'Invalid credentials'},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+    except Exception as e:
+        print(f"Error during login: {e}")
+        return Response(
+            {'error': 'An error occurred during login'},
+            status=status.HTTP_400_BAD_REQUEST
+        )

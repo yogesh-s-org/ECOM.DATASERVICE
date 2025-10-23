@@ -1,16 +1,7 @@
 
 from django.db import models
 import uuid
-
-class User(models.Model):
-	id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-	name = models.TextField()
-	email = models.TextField()
-	phone = models.TextField()
-	role = models.TextField()
-
-	def __str__(self):
-		return self.name
+from django.contrib.auth.models import User
 
 class Address(models.Model):
 	id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
