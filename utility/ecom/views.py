@@ -1,7 +1,7 @@
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
-from .models import Product, Category
+from .models import Product, Category, Wishlist
 from .serializers import ProductSerializer, CategorySerializer, RegisterSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth.models import User
@@ -120,5 +120,62 @@ def login(request):
         print(f"Error during login: {e}")
         return Response(
             {'error': 'An error occurred during login'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+@api_view(['POST'])
+def add_product_to_wishlist(request):
+    """
+    Add a product to the user's wishlist.
+    """
+    try:
+        if not request.user.has_perm('ecom.add_wishlist'):
+            print(request.user)
+            return Response(
+                {'error': 'You do not have permission to add to wishlist'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        user = request.user
+        product_id = request.data.get('product_id')
+        product = Product.objects.get(id=product_id)
+        print(f"Adding product {product_id} to wishlist for user {user}")
+        wishlist_item, created = Wishlist.objects.get_or_create(user=user, product=product)
+        if created:
+            return Response(
+                {'message': 'Product added to wishlist'},
+                status=status.HTTP_201_CREATED
+            )
+        else:
+            return Response(
+                {'message': 'Product already in wishlist'},
+                status=status.HTTP_200_OK
+            )
+    except Exception as e:
+        print(f"Error adding product to wishlist: {e}")
+        return Response(
+            {'error': 'An error occurred while adding product to wishlist'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+@api_view(['GET'])
+def get_wishlist(request):
+    """
+    Retrieve the user's wishlist.
+    """
+    try:
+        if not request.user.has_perm('ecom.view_wishlist'):
+            return Response(
+                {'error': 'You do not have permission to view wishlist'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        user = request.user
+        wishlist_items = Wishlist.objects.filter(user=user).select_related('product')
+        products = [item.product for item in wishlist_items]
+        serializer = ProductSerializer(products, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    except Exception as e:
+        print(f"Error fetching wishlist: {e}")
+        return Response(
+            {'error': 'An error occurred while fetching wishlist'},
             status=status.HTTP_400_BAD_REQUEST
         )
