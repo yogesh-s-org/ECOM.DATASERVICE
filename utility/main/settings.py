@@ -91,7 +91,7 @@ DATABASES = {
         'USER': 'postgres',
         'PASSWORD': 'postgres',
         'HOST': 'ecom-db',
-        'PORT': '5433',
+        'PORT': '5432',
     }
 }
 
