@@ -17,14 +17,15 @@ def get_products(request):
                 {'error': 'You do not have permission to view products'},
                 status=status.HTTP_403_FORBIDDEN
             )
-        limit = "end"
-        offset = 0
+        start_index = 0
+        end_index = "end"
         reqlimit = request.GET.get('limit')
         if reqlimit is not None:
             limit = int(reqlimit)
             requestedPage = int(request.GET.get('page') or 1)
-            offset = (limit * (requestedPage - 1))
-        products = Product.objects.all().select_related('stock').prefetch_related('images')[offset : offset + limit]
+            start_index = (limit * (requestedPage - 1))
+            end_index = start_index + limit
+        products = Product.objects.all().select_related('stock').prefetch_related('images')[start_index:end_index]
         serializer = ProductSerializer(products, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
     except Exception as e:
