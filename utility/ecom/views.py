@@ -108,8 +108,8 @@ def login(request):
         if user and user.check_password(password):
             refresh = RefreshToken.for_user(user)
             return Response({
-                'refresh': str(refresh),
-                'access': str(refresh.access_token),
+                'refreshToken': str(refresh),
+                'accessToken': str(refresh.access_token),
             }, status=status.HTTP_200_OK)
         else:
             return Response(
