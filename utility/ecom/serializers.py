@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, Address, Product, Stock, Image, Cart, Wishlist, Orders, Category
+from .models import Rating, User, Address, Product, Stock, Image, Cart, Wishlist, Orders, Category
 
 class RegisterSerializer(serializers.ModelSerializer):
     password2 = serializers.CharField(write_only=True)
@@ -35,14 +35,19 @@ class ImageSerializer(serializers.ModelSerializer):
         model = Image
         fields = [ 'url']
 
+class RatingSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Rating
+        fields = ['id', 'rating', 'review']
+
 class ProductSerializer(serializers.ModelSerializer):
     images = ImageSerializer(many=True, read_only=True)
     stock = StockSerializer(read_only=True)
-
+    ratings = RatingSerializer(many=True, read_only=True)
     class Meta:
         model = Product
-        fields = ['id', 'name', 'description', 'selling_price', 'max_retail_price', 
-                 'category', 'stock', 'images']
+        fields = ['id', 'name', 'description', 'selling_price', 'max_retail_price',
+                 'category', 'stock', 'images', 'ratings']
 
 class CartSerializer(serializers.ModelSerializer):
     product = ProductSerializer(read_only=True)

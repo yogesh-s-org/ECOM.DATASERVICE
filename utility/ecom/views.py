@@ -20,14 +20,12 @@ def get_products(request):
         start_index = None
         end_index = None
         reqlimit = request.GET.get('limit')
-        print(f"Requested limit: {reqlimit}")
         if reqlimit is not None:
             limit = int(reqlimit)
             requestedPage = int(request.GET.get('page') or 1)
             start_index = (limit * (requestedPage - 1))
             end_index = start_index + limit
-        print(f"Fetching products from index {start_index} to {end_index}")
-        products = Product.objects.all().select_related('stock').prefetch_related('images')[start_index:end_index]
+        products = Product.objects.all().select_related('stock').prefetch_related('images', 'ratings')[start_index:end_index]
         serializer = ProductSerializer(products, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
     except Exception as e:
