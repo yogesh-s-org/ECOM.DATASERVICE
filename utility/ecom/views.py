@@ -1,10 +1,15 @@
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
-from .models import Product, Category, Wishlist
-from .serializers import ProductSerializer, CategorySerializer, RegisterSerializer
+from .models import Product, Category, Wishlist, OTP
+from .serializers import ProductSerializer, CategorySerializer
 from rest_framework_simplejwt.tokens import RefreshToken
-from django.contrib.auth.models import User
+from .utils import send_otp_email, add_user_to_group
+from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
+
+#Fetch custom model
+User = get_user_model()
 
 @api_view(['GET'])
 def get_products(request):
@@ -83,51 +88,33 @@ def get_categories(request):
         )
 
 @api_view(['POST'])
-def register(request):
-    """
-    Register a new user.
-    """
-    try:
-        serializer = RegisterSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    except Exception as e:
-        print(f"Error during registration: {e}")
-        return Response(
-            {'error': 'An error occurred during registration'},
-            status=status.HTTP_400_BAD_REQUEST
-        )
+def authenticate(request):
+        email = request.data.get('email')
+        otp_code = request.data.get('otp_code')
 
-@api_view(['POST'])
-def login(request):
-    """
-    Authenticate a user and provide a JWT token.
-    """
-    try:
-        data = request.data
-        username = data["username"]
-        password = data["password"]
-        user = User.objects.get(username=username)
-        if user and user.check_password(password):
+        if not email or not otp_code:
+            return Response({'error': 'Email address and OTP are required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            user = User.objects.get(email=email) 
+            latest_otp = OTP.objects.filter(user=user).order_by('-created_at').first()
+
+            if not latest_otp or not latest_otp.is_valid() or latest_otp.otp_code != otp_code:
+                return Response({'error': 'Invalid or expired OTP.'}, status=status.HTTP_401_UNAUTHORIZED)
+            
             refresh = RefreshToken.for_user(user)
+            
             return Response({
-                'refreshToken': str(refresh),
-                'accessToken': str(refresh.access_token),
+                'message': 'Login successful.',
+                'access': str(refresh.access_token),
+                'refresh': str(refresh),
             }, status=status.HTTP_200_OK)
-        else:
-            return Response(
-                {'error': 'Invalid credentials'},
-                status=status.HTTP_401_UNAUTHORIZED
-            )
-    except Exception as e:
-        print(f"Error during login: {e}")
-        return Response(
-            {'error': 'An error occurred during login'},
-            status=status.HTTP_400_BAD_REQUEST
-        )
-    
+
+        except User.DoesNotExist:
+            return Response({'error': 'User not found.'}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({'error': 'An internal error occurred.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+   
 @api_view(['POST'])
 def add_product_to_wishlist(request):
     """
@@ -184,3 +171,23 @@ def get_wishlist(request):
             {'error': 'An error occurred while fetching wishlist'},
             status=status.HTTP_400_BAD_REQUEST
         )
+        
+@api_view(['POST'])
+def request_otp(request):
+    email = request.data.get('email')
+
+    if not email:
+        return Response({'error': 'email is required.'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    user, created = User.objects.get_or_create(email=email)
+    if created:
+        add_user_to_group(user, 'buyer')
+    otp_code = OTP.generate_code()
+    OTP.objects.create(user=user, otp_code=otp_code)
+    sms_success = send_otp_email(email, otp_code)
+
+    if sms_success:
+        return Response({'message': 'OTP sent successfully.'}, status=status.HTTP_200_OK)
+    else:
+        # Handle SMS failure (e.g., temporary service outage)
+        return Response({'error': 'Failed to send OTP.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

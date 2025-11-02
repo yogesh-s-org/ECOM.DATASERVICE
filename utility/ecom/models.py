@@ -1,7 +1,46 @@
 
 from django.db import models
-import uuid
 from django.contrib.auth.models import User
+from django.contrib.auth.models import AbstractUser
+from django.utils import timezone
+import uuid
+import random
+import string
+
+class User(AbstractUser):
+    # Set unique=True to ensure one phone per account
+    email = models.EmailField(unique=True)
+    username = None 
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = []
+    
+    def __str__(self):
+	    return self.email
+
+class OTP(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    otp_code = models.CharField(max_length=6)
+    created_at = models.DateTimeField(auto_now_add=True)
+    # OTP is valid for 5 minutes
+    expiry_time = models.DateTimeField(null=True, blank=True) 
+
+    def is_valid(self):
+        """Checks if the OTP has expired."""
+        return timezone.now() < self.expiry_time
+    
+    @staticmethod
+    def generate_code():
+        """Generates a random 6-digit numeric OTP."""
+        return ''.join(random.choices(string.digits, k=6))
+
+    def save(self, *args, **kwargs):
+        # Set expiry time 5 minutes from now if not already set
+        if not self.pk: 
+            self.expiry_time = timezone.now() + timezone.timedelta(minutes=5)
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.user.phone_number} - {self.otp_code}"
 
 class Address(models.Model):
 	id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
